@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #__next {
+    @apply h-full;
+  }
+
+  input {
+    @apply h-10 rounded-md border bg-gray-100 px-3;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply h-10 rounded-md bg-blue-500 px-10 text-white;
+    @apply disabled:bg-gray-300;
+  }
+
+  .info {
+    @apply inline-flex items-center gap-2 rounded-md border border-gray-500 px-4 py-2 text-gray-900;
+  }
+}
