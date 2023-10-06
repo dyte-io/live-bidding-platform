@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { DyteProvider, useDyteClient } from '@dytesdk/react-web-core';
 import { provideDyteDesignSystem } from '@dytesdk/react-ui-kit';
 import LoadingScreen from './loadingScreen';
-import SetupScreen from './setupScreen';
-import Meeting from './meeting'
+import SetupScreen from '../components/setupScreen';
+import Meeting from '../components/meeting'
 
 function App() {
   const meetingEl = useRef<HTMLDivElement>(null);
