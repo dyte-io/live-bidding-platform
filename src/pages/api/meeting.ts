@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 const API_KEY = process.env.DYTE_API_KEY;
 const ORG_ID = process.env.DYTE_ORG_ID;
+const MEETING_ID = process.env.DYTE_MEETING_ID;
 
 const BASIC_TOKEN = Buffer.from(ORG_ID + ':' + API_KEY).toString('base64');
 
@@ -15,40 +16,21 @@ export default async function handler(
       .json({ success: false, message: 'Method Not Allowed' });
   }
 
-  const { name, email } = req.body;
-
-  const meetingResponse = await fetch(
-    'https://api.cluster.dyte.in/v2/meetings',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Basic ' + BASIC_TOKEN,
-      },
-      body: JSON.stringify({ title: 'Survey with ' + name }),
-    }
-  );
-
-  const meetingData = await meetingResponse.json();
-
-  if (!meetingResponse.ok) {
-    return res.status(meetingResponse.status).json(meetingData);
-  }
-
-  const { id } = meetingData.data;
+  const { preset } = req.body;
 
   const participantResponse = await fetch(
-    `https://api.cluster.dyte.in/v2/meetings/${id}/participants`,
+    `https://api.cluster.dyte.in/v2/meetings/${MEETING_ID}/participants`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Basic ' + BASIC_TOKEN,
       },
+     
       body: JSON.stringify({
-        name,
-        preset_name: 'group_call_host',
-        custom_participant_id: email,
+        name: preset === 'group_call_host' ? 'Host' : 'Participant',
+        preset_name: preset,
+        custom_participant_id: new Date().toString(),
       }),
     }
   );

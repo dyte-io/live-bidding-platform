@@ -1,105 +1,104 @@
-import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { FormEvent, useCallback, useReducer, useState } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useRef, useState } from 'react';
+import { DyteProvider, useDyteClient } from '@dytesdk/react-web-core';
+import { provideDyteDesignSystem } from '@dytesdk/react-ui-kit';
+import LoadingScreen from './loadingScreen';
+import SetupScreen from './setupScreen';
+import Meeting from './meeting'
 
-interface Form {
-  name: string;
-  email: string;
-}
+function App() {
+  const meetingEl = useRef<HTMLDivElement>(null);
+  const [meeting, initMeeting] = useDyteClient();
+  const [authToken, setAuthToken] = useState('');
+  const [roomJoined, setRoomJoined] = useState<boolean>(false);
 
-export default function Home() {
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useReducer(
-    (state: Form, payload: Partial<Form>) => {
-      return { ...state, ...payload };
-    },
-    { name: '', email: '' }
-  );
+  const handleSubmit = async (preset: string) => {
+      const res = await fetch('/api/meeting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ preset }),
+      });
+      const data = await res.json();
 
-  const router = useRouter();
-
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-
-      if (form.email.trim() === '' || form.name.trim() === '') {
+      if (!res.ok) {
+        alert(
+          'There was an error when starting the survey, check console for error'
+        );
+        console.log(res.status, data);
         return;
       }
+      const { token } = data.data;
+      setAuthToken(token);
+  }
 
-      setSubmitting(true);
+  useEffect(() => {
+    if (!authToken || !meetingEl.current) return;
+    provideDyteDesignSystem(meetingEl.current, {
+      googleFont: 'Poppins',
+      theme: 'light',
+      colors: {
+        danger: '#ffb31c',
+        brand: {
+          300: '#c6a6ff',
+          400: '#9e77e0',
+          500: '#754cba',
+          600: '#4e288f',
+          700: '#2e0773',
+        },
+        text: '#071428',
+        'text-on-brand': '#ffffff',
+        'video-bg': '#E5E7EB',
+      },
+      borderRadius: 'rounded',
+    });
+  
+    initMeeting({
+      authToken,
+      defaults: {
+        audio: false,
+        video: false,
+      },
+    });
+  }, [authToken])
 
-      try {
-        const res = await fetch('/api/meeting', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(form),
-        });
+  useEffect(() => {
+    if (!meeting) return;
 
-        const data = await res.json();
+    const roomJoinedListener = () => {
+      setRoomJoined(true);
+    };
+    const roomLeftListener = () => {
+      setRoomJoined(false);
+    };
+    meeting.self.on('roomJoined', roomJoinedListener);
+    meeting.self.on('roomLeft', roomLeftListener);
 
-        if (!res.ok) {
-          alert(
-            'There was an error when starting the survey, check console for error'
-          );
-          console.log(res.status, data);
-          return;
-        }
+    return () => {
+      meeting.self.removeListener('roomJoined', roomJoinedListener);
+      meeting.self.removeListener('roomLeft', roomLeftListener);
+    }
 
-        const { token } = data.data;
+  }, [meeting])
 
-        router.push({
-          pathname: '/survey',
-          query: {
-            token,
-          },
-        });
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [form, router]
-  );
+  if (!authToken) return (
+    <div className='h-[100vh] w-full flex flex-col items-center justify-center'>
+      <h3 className='mb-6 text-xl text-black'>Live Auction App</h3>
+      <button className='mb-3 text-white rounded-md  border-solid border-[1px] w-[300px] p-2 border-[#b58aff] bg-[#754cba]' onClick={() => handleSubmit('group_call_host')}>Join as Host</button>
+      <button className='mb-3 text-color rounded-md border-solid border-[1px] w-[300px] border-gray-400  bg-gray-300 p-2' onClick={() => handleSubmit('group_call_participant')}>Join as Participant</button>
+    </div>
+  )
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-6">
-      <Head>
-        <title>Async Video Survey - Dyte</title>
-      </Head>
-      <div className="flex w-full max-w-screen-md flex-col items-center justify-center gap-3 text-center">
-        <h1 className="text-3xl font-bold text-blue-600">
-          Async Video Survey 
-        </h1>
-
-        <form
-          className="mt-4 flex w-full max-w-sm flex-col gap-3"
-          onSubmit={handleSubmit}
-        >
-          <input
-            type="text"
-            placeholder="Name"
-            value={form.name}
-            onInput={(e) => setForm({ name: e.currentTarget.value })}
-            required
-          />
-
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onInput={(e) => setForm({ email: e.currentTarget.value })}
-            required
-          />
-
-          <button
-            className="h-10 rounded-md bg-blue-600 font-semibold text-white"
-            disabled={submitting}
-          >
-            {submitting ? 'Starting...' : 'Start'}
-          </button>
-        </form>
-      </div>
+    <div ref={meetingEl} >
+    <DyteProvider value={meeting} fallback={<LoadingScreen />}>
+      {
+        !roomJoined ? <SetupScreen />: <Meeting />
+      }
+    </DyteProvider>
     </div>
-  );
+  )
 }
+
+export default App
