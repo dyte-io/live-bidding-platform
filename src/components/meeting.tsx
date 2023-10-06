@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import {
   DyteCameraToggle,
   DyteChatToggle,
+  DyteDialogManager,
   DyteGrid,
   DyteHeader,
   DyteLeaveButton,
@@ -30,6 +31,7 @@ const Meeting = () => {
   const [showPopup, setShowPopup] = useState<boolean>(true);
   const [auctionStarted, setAuctionStarted] = useState<boolean>(false);
   const [activeSidebar, setActiveSidebar] = useState<boolean>(false);
+  const [size, setSize] = useState<any>('lg');
   const [highestBid, setHighestBid] = useState<Bid>({ bid: 100, user: 'default' });
 
   const handlePrev = () => {
@@ -128,10 +130,18 @@ const Meeting = () => {
     setAuctionStarted(!auctionStarted);
   }
 
+  useEffect(() => {
+    window.onresize = () => {
+      if (window.innerWidth < 1000 || window.innerHeight < 530) setSize('md');
+      else setSize('lg');
+    };
+  }, [])
+
   return (
     <div className='h-[100vh] max-h-[100vh] overflow-y-auto w-full box-border flex flex-col'>
       <DyteParticipantsAudio meeting={meeting} />
       <DyteNotifications meeting={meeting} />
+      <DyteDialogManager meeting={meeting} />
 
       <DyteHeader meeting={meeting} size='lg'>
         <div className="flex flex-row flex-1 mr-[40px] justify-end">
@@ -149,7 +159,7 @@ const Meeting = () => {
         {
           auctionStarted && (
             <div className={`auction-container  ${!showPopup ? 'hide-auction-popup' : ''}`}>
-              <div className='auction-img-cont relative flex flex-grow h-[300px]'>
+              <div className='auction-img-cont relative flex flex-grow h-[10px]'>
               <img className='h-[100%]' src={bidItems[item].link} />
               <div className='auction-desc'>
                 {bidItems[item].description}
@@ -165,7 +175,7 @@ const Meeting = () => {
           </div>
           )
         }
-        <DyteGrid layout='column' meeting={meeting} style={{ height: '100%' }}/>
+        <DyteGrid layout='column' size={size} meeting={meeting} style={{ height: '100%' }}/>
         {activeSidebar && <DyteSidebar meeting={meeting} />}
       </div>
 

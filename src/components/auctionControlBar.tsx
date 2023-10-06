@@ -47,7 +47,7 @@ const AuctionControlBar = (props: Props) => {
                 !isHost && <div className='ml-2'>
                 <input className='border border-solid border-[#97999d] bg-[#c0c3c8] rounded-md outline-none p-2 text-black placeholder:text-gray-500' onChange={(e) => {
                     setBid(e.target.value);
-                }} placeholder='$ 345' value={bid} />
+                }} placeholder='$ 100' value={bid} />
                 <button className='p-2 border-solid border-[1px] border-[#9e77e0] outline-none ml-3 rounded-md bg-[#754cba] text-white cursor-pointer' onClick={placeBid}>Your Bid</button>
             </div>
             }
